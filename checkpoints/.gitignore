@@ -1,0 +1,4 @@
+﻿# Keep directory layout, ignore generated/data contents.
+*
+!.gitignore
+!.gitkeep

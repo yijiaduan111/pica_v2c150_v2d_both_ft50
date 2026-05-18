@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Environments
+.venv/
+venv/
+.env
+.env.*
+
+# Training / evaluation outputs
+runs/*
+!runs/.gitignore
+!runs/.gitkeep
+output/*
+!output/.gitignore
+!output/.gitkeep
+checkpoints/*
+!checkpoints/.gitignore
+!checkpoints/.gitkeep
+wandb/
+logs/
+logs_output/
+
+# Dataset / large assets
+assets/*
+!assets/.gitignore
+!assets/.gitkeep
+dataset/*
+!dataset/.gitignore
+!dataset/.gitkeep
+*.pth
+*.pt
+*.ckpt
+*.tar.gz
+*.zip
+
+# Local IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
