@@ -1,4 +1,9 @@
-﻿# Keep directory layout, ignore generated/data contents.
 *
 !.gitignore
 !.gitkeep
+!README.md
+!gapartnet_example/
+!gapartnet_example/**
+.DS_Store
+**/.DS_Store
+Thumbs.db

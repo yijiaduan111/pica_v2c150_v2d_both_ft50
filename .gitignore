@@ -11,28 +11,43 @@ venv/
 .env
 .env.*
 
-# Training / evaluation outputs
+# Runtime logs / generated training directories
 runs/*
 !runs/.gitignore
 !runs/.gitkeep
-output/*
-!output/.gitignore
-!output/.gitkeep
-checkpoints/*
-!checkpoints/.gitignore
-!checkpoints/.gitkeep
 wandb/
 logs/
 logs_output/
 
-# Dataset / large assets
+# Output: keep curated trajectories, ignore generated eval artifacts
+output/*
+!output/.gitignore
+!output/.gitkeep
+!output/hand_drag/
+!output/hand_drag/**/
+!output/hand_drag/**/trajectory.json
+
+# Checkpoints: keep curated deployment weights only
+checkpoints/*
+!checkpoints/.gitignore
+!checkpoints/.gitkeep
+!checkpoints/README.md
+!checkpoints/*/
+!checkpoints/*/HandDrag.pth
+
+# Assets: keep curated GAPartNet objects only
 assets/*
 !assets/.gitignore
 !assets/.gitkeep
+!assets/gapartnet_example/
+!assets/gapartnet_example/**
+
+# Dataset placeholder; raw datasets should not be committed by default
 dataset/*
 !dataset/.gitignore
 !dataset/.gitkeep
-*.pth
+
+# Large ad-hoc archives / extra checkpoints
 *.pt
 *.ckpt
 *.tar.gz

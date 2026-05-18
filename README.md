@@ -8,7 +8,10 @@
 - `hand_object_gym.py`: hand/object environment and asset loading utilities.
 - `hand_config.yaml`: default hand/object configuration using relative paths.
 - `smplx_right_hand_floating.urdf`: hand URDF used by the simulator.
-- `assets/`, `dataset/`, `output/`, `runs/`, `checkpoints/`
+- `assets/gapartnet_example/`: curated GAPartNet assets for the released objects.
+- `output/hand_drag/<object_id>/trajectory.json`: generated trajectories used by training/evaluation.
+- `checkpoints/<object_id>/HandDrag.pth`: deployment checkpoints for the trusted v2c150 + v2d Both FT50 policy.
+- `dataset/`, `runs/`: placeholder directories for local data and generated runs.
 
 ## Main Pipeline
 

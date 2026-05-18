@@ -1,4 +1,6 @@
-﻿# Keep directory layout, ignore generated/data contents.
 *
 !.gitignore
 !.gitkeep
+!hand_drag/
+!hand_drag/**/
+!hand_drag/**/trajectory.json
