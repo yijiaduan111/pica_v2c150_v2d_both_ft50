@@ -735,7 +735,8 @@ class HandDragTask:
                 and os.path.getsize(self.epoch_log_path) > 0
             )
 
-        # -- Load expert trajectory for RSI --
+        # -- Load expert trajectory for RSI / PPO drag-start --
+        self.trajectory_path = trajectory_path
         self._load_trajectory(trajectory_path)
 
         # Ready-to-pull non-RSI reset state: the first drag frame is where
@@ -917,6 +918,96 @@ class HandDragTask:
             (i for i, phase in enumerate(phase_rows) if phase == "drag"),
             min(40, max(0, self.n_traj - 1)),
         )
+
+    def _hand_targets_from_trajectory_frame(self, frame):
+        """Return the 51-DOF hand target vector stored in one trajectory frame."""
+        return np.asarray(
+            frame["virtual_xyz"] + frame["wrist_rpy"] + frame["finger_dofs"],
+            dtype=np.float32,
+        )
+
+    def run_pre_policy_approach(
+        self,
+        trajectory_path: str = None,
+        trajectory: list = None,
+        steps_per_frame: int = 1,
+        transition_steps: int = 0,
+        frame_callback=None,
+    ):
+        """Execute the deterministic trajectory prefix before PPO starts.
+
+        This is the real full-pipeline pre-roll used before querying the PPO
+        policy, not a video post-process. It plays frames before the first
+        ``phase == "drag"`` by sending them as hand PD targets in Isaac Gym.
+        The caller should then call ``reset()`` to initialise PPO exactly at
+        this task's normal drag-start state. When ``trajectory_path`` is the
+        same file as ``self.trajectory_path`` and ``transition_steps == 0``, the
+        pre-roll end and PPO start are the same trajectory frame.
+
+        ``frame_callback`` is optional and is only for observers such as video
+        recorders; omitting it runs the same pre-roll without saving images.
+        """
+        if trajectory is None:
+            path = trajectory_path or self.trajectory_path
+            with open(path) as f:
+                trajectory = json.load(f)
+        drag_start_idx = next(
+            (i for i, frame in enumerate(trajectory) if frame.get("phase") == "drag"),
+            min(40, max(0, len(trajectory) - 1)),
+        )
+        pre_end = max(0, drag_start_idx)
+        rows = []
+        current = None
+        print(
+            f"  [pipeline-pre] playing trajectory frames [0, {pre_end}); "
+            f"drag idx={drag_start_idx}"
+        )
+
+        for traj_idx, frame in enumerate(trajectory[:pre_end]):
+            current = self._hand_targets_from_trajectory_frame(frame)
+            self.env.set_hand_dof_targets(current)
+            self.env.run_steps(int(steps_per_frame), refresh_obs=True)
+            row = {
+                "segment": "pre",
+                "trajectory_idx": int(traj_idx),
+                "phase": frame.get("phase", ""),
+                "step": int(frame.get("step", traj_idx)),
+            }
+            rows.append(row)
+            if frame_callback is not None:
+                frame_callback(row)
+
+        if current is None:
+            current = self.env.get_current_hand_targets()
+
+        n_transition = max(0, int(transition_steps))
+        if n_transition > 0:
+            ppo_start = self.ready_grasp_hand.detach().cpu().numpy().astype(np.float32)
+            print(
+                f"  [pipeline-pre] interpolating to PPO drag-start "
+                f"in {n_transition} steps"
+            )
+            for step in range(n_transition):
+                frac = float(step + 1) / float(n_transition)
+                targets = (1.0 - frac) * current + frac * ppo_start
+                self.env.set_hand_dof_targets(targets.astype(np.float32))
+                self.env.run_steps(int(steps_per_frame), refresh_obs=True)
+                row = {
+                    "segment": "transition_to_ppo_start",
+                    "trajectory_idx": None,
+                    "phase": "transition",
+                    "step": int(step),
+                }
+                rows.append(row)
+                if frame_callback is not None:
+                    frame_callback(row)
+
+        return {
+            "drag_start_frame_idx": int(drag_start_idx),
+            "pre_frames_played": int(pre_end),
+            "transition_steps": int(n_transition),
+            "rows": rows,
+        }
 
     # =====================================================================
     #  PICA v2a:  per-env dynamics randomization
